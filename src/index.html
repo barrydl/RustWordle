@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wordle Solver</title>
+    <style>
+        body { font-family: Arial; max-width: 700px; margin: auto; }
+        .row { margin-bottom: 10px; }
+        select { width: 60px; }
+        button { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>Wordle Solver</h1>
+
+<div id="guesses"></div>
+
+<button onclick="addRow()">Add Guess</button>
+<button onclick="submitGuesses()">Suggest</button>
+
+<h2>Suggestions</h2>
+<ol id="results"></ol>
+
+<script>
+function addRow() {
+    const div = document.createElement("div");
+    div.className = "row";
+    div.innerHTML = `
+        Guess: <input maxlength="5" class="guess">
+        Pattern:
+        ${[0,1,2,3,4].map(() => `
+            <select class="pattern">
+                <option value="b">black⬛</option>
+                <option value="y">yellow🟨</option>
+                <option value="g">green🟩</option>
+            </select>
+        `).join("")}
+    `;
+    document.getElementById("guesses").appendChild(div);
+}
+
+async function submitGuesses() {
+    const rows = document.querySelectorAll(".row");
+    let data = [];
+
+    rows.forEach(row => {
+        const guess = row.querySelector(".guess").value.toLowerCase();
+        const pattern = Array.from(row.querySelectorAll(".pattern"))
+            .map(s => s.value)
+            .join("");
+
+        if (guess.length === 5) {
+            data.push({ guess, pattern });
+        }
+    });
+
+    const response = await fetch("/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    const resultsList = document.getElementById("results");
+    resultsList.innerHTML = "";
+
+    result.suggestions.forEach(word => {
+        const li = document.createElement("li");
+        li.innerText = word;
+        resultsList.appendChild(li);
+    });
+}
+</script>
+
+</body>
+</html>
